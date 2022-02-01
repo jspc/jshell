@@ -1,6 +1,7 @@
 package helloworld
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/fatih/color"
@@ -32,7 +33,10 @@ func (HelloWorld) Description() string {
 func (HelloWorld) Run() error {
 	color.Magenta(str)
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second)
+
+	fmt.Println("press enter to return to the main menu")
+	fmt.Scanln()
 
 	return nil
 }
