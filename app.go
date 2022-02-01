@@ -3,9 +3,9 @@ package main
 import (
 	"github.com/manifoldco/promptui"
 
-	"localhost/jshell/apps/hello-world"
-	"localhost/jshell/apps/quit"
-	"localhost/jshell/apps/wordle"
+	"github.com/jspc/jshell/apps/hello-world"
+	"github.com/jspc/jshell/apps/quit"
+	"github.com/jspc/jshell/apps/wordle"
 )
 
 var (

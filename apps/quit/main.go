@@ -32,10 +32,8 @@ func (Quit) Run() error {
 
 		default:
 			if err != nil {
-				break
+				return err
 			}
 		}
 	}
-
-	return nil
 }

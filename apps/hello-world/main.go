@@ -36,6 +36,8 @@ func (HelloWorld) Run() error {
 	time.Sleep(time.Second)
 
 	fmt.Println("press enter to return to the main menu")
+
+	//#nosec
 	fmt.Scanln()
 
 	return nil

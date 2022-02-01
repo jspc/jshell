@@ -50,6 +50,7 @@ type Wordle struct {
 }
 
 func (w *Wordle) loadGames() (err error) {
+	//#nosec
 	f, err := os.Open(wordleGobPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -67,6 +68,7 @@ func (w *Wordle) loadGames() (err error) {
 }
 
 func (w *Wordle) saveGames() (err error) {
+	//#nosec
 	f, err := os.Create(wordleGobPath)
 	if err != nil {
 		return
@@ -128,7 +130,7 @@ func (w *Wordle) statsMode() (err error) {
 		won    int
 		lost   int
 
-		attempts = make([]int, 6)
+		attempts = make([]int, maxAttempts)
 	)
 
 	played = len(w.Games)
@@ -137,7 +139,7 @@ func (w *Wordle) statsMode() (err error) {
 		if g.Complete {
 			won += 1
 			attempts[len(g.Rows)-1] += 1
-		} else if len(g.Rows) == 6 {
+		} else if len(g.Rows) == maxAttempts {
 			lost += 1
 		}
 	}
@@ -150,8 +152,8 @@ func (w *Wordle) statsMode() (err error) {
 		played, won, float64(won/played*100))
 	fmt.Printf("You abandoned %d games\n\n", played-won-lost)
 
-	color.Cyan(fmt.Sprintf("Guess Distribution\n"))
-	bars := make(pterm.Bars, 6)
+	color.Cyan("Guess Distribution\n")
+	bars := make(pterm.Bars, len(attempts))
 	for i, count := range attempts {
 		bars[i] = pterm.Bar{
 			Label: fmt.Sprintf("%d", i+1),
@@ -159,9 +161,12 @@ func (w *Wordle) statsMode() (err error) {
 		}
 	}
 
+	//#nosec
 	pterm.DefaultBarChart.WithHorizontal().WithBars(bars).Render()
 
 	fmt.Println("press enter to quit")
+
+	//#nosec
 	fmt.Scanln()
 
 	return
@@ -177,7 +182,7 @@ func (w *Wordle) gameMode() (err error) {
 		w.Games = append(w.Games, g)
 	}
 
-	for len(g.Rows) < 6 {
+	for len(g.Rows) < maxAttempts {
 		fmt.Print("\033[H\033[2J")
 		fmt.Println(g)
 
@@ -227,11 +232,17 @@ func (w *Wordle) gameMode() (err error) {
 		fmt.Println("Better luck next time")
 	}
 
-	fmt.Println("\n\nshare:\n----------\n")
+	fmt.Println("\n\nshare:\n----------")
+	fmt.Println()
+
 	fmt.Println(g.Emoji())
-	fmt.Println("\n----------\n")
+
+	fmt.Println("\n----------")
+	fmt.Println()
 
 	fmt.Println("press enter to quit")
+
+	//#nosec
 	fmt.Scanln()
 
 	return nil

@@ -2325,6 +2325,7 @@ var words = []string{
 func loadWord(seed int64) string {
 	rand.Seed(seed)
 
+	//#nosec
 	return words[rand.Intn(len(words))]
 }
 

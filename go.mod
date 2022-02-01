@@ -1,4 +1,4 @@
-module localhost/jshell
+module github.com/jspc/jshell
 
 go 1.17
 
