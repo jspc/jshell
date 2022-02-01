@@ -1,5 +1,9 @@
 package wordle
 
+import (
+	"math/rand"
+)
+
 var words = []string{
 	"aback",
 	"abase",
@@ -2316,6 +2320,12 @@ var words = []string{
 	"zebra",
 	"zesty",
 	"zonal",
+}
+
+func loadWord(seed int64) string {
+	rand.Seed(seed)
+
+	return words[rand.Intn(len(words))]
 }
 
 func isValidWord(s string) bool {

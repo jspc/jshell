@@ -5,14 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
 	"github.com/manifoldco/promptui"
+	"github.com/pterm/pterm"
 )
 
 var (
@@ -27,6 +26,14 @@ James' totally copyright/trademark/IP infringing wordle clone. Ssshhh! 🤫
 
 
 `)
+
+	runMenuTemplate = &promptui.SelectTemplates{
+		Label:    "{{ . }}",
+		Active:   "➡️  {{ . | cyan }}",
+		Inactive: "   {{ . | cyan }}",
+		Selected: "➡️  {{ . | red | cyan }}",
+		Details:  "Selected: {{ . }}",
+	}
 )
 
 func must(i string, err error) string {
@@ -35,139 +42,6 @@ func must(i string, err error) string {
 	}
 
 	return i
-}
-
-// Character holds a specific character guess in a
-// specific row.
-//
-// Value 'C' holds the specific character
-//       'Position' holds whether the character is in the correct position
-//       'Present' holds whether the character is present in the word, but wrong pos
-type Character struct {
-	C        byte
-	Position bool
-	Present  bool
-}
-
-func (c Character) String() string {
-	if c.Position {
-		return color.New(color.BgHiGreen, color.FgHiBlack).Sprint(string(c.C))
-	}
-
-	if c.Present {
-		return color.New(color.BgYellow, color.FgHiWhite).Sprint(string(c.C))
-	}
-
-	return color.HiWhiteString(string(c.C))
-}
-
-func (c Character) Emoji() string {
-	if c.Position {
-		return "🟩"
-	}
-
-	if c.Present {
-		return "🟨"
-	}
-
-	return "⬛"
-}
-
-// Row holds a slice of Character types representing a guess from a user
-type Row struct {
-	Characters []Character
-}
-
-func (r Row) String() string {
-	cs := make([]string, len(r.Characters))
-	for i := range cs {
-		cs[i] = r.Characters[i].String()
-	}
-
-	return strings.Join(cs, "  ")
-}
-
-func (r Row) Emoji() string {
-	sb := strings.Builder{}
-
-	for _, c := range r.Characters {
-		sb.WriteString(c.Emoji())
-	}
-
-	return sb.String()
-}
-
-// Game represents a day's game, including guesses and the day the
-// game was generated for
-type Game struct {
-	Word     string
-	Rows     []Row
-	Date     time.Time
-	Complete bool
-}
-
-func (g *Game) Guess(s string) (correct bool) {
-	r := Row{
-		Characters: make([]Character, len(g.Word)),
-	}
-
-	for i, c := range s {
-		r.Characters[i].C = byte(c)
-
-		if g.Word[i] == byte(c) {
-			r.Characters[i].Position = true
-		}
-
-		if strings.Contains(g.Word, string(c)) {
-			r.Characters[i].Present = true
-		}
-	}
-
-	if g.Word == s {
-		g.Complete = true
-	}
-
-	g.Rows = append(g.Rows, r)
-
-	return g.Complete
-}
-
-func (g *Game) String() string {
-	sb := strings.Builder{}
-
-	sb.WriteString(header)
-	sb.WriteString(color.MagentaString(formatDate(g.Date)))
-	sb.WriteString("\n\n\n")
-
-	for idx, row := range g.Rows {
-		sb.WriteString(fmt.Sprintf("%d\t%s\n", idx+1, row.String()))
-	}
-
-	return sb.String()
-}
-
-func (g *Game) Emoji() string {
-	sb := strings.Builder{}
-	sb.WriteString("wordle-ish ")
-	sb.WriteString(formatDate(g.Date))
-	sb.WriteString("\n\n")
-
-	for _, row := range g.Rows {
-		sb.WriteString(row.Emoji())
-		sb.WriteString("\n")
-	}
-
-	return sb.String()
-}
-
-func NewGame() *Game {
-	t := bod()
-
-	return &Game{
-		Word: loadWord(t.Unix()),
-		Rows: make([]Row, 0),
-		Date: t,
-	}
 }
 
 // Wordle holds the state for a set of games
@@ -221,6 +95,79 @@ func (w *Wordle) Run() (err error) {
 		return
 	}
 
+	prompt := promptui.Select{
+		Label:     "Mode",
+		Items:     []string{"See my stats", "Play today's game", "Back to main menu"},
+		Templates: runMenuTemplate,
+	}
+
+	var i int
+	for {
+		fmt.Print("\033[H\033[2J")
+		fmt.Println(header)
+
+		i, _, err = prompt.Run()
+		switch i {
+		case 0:
+			err = w.statsMode()
+		case 1:
+			err = w.gameMode()
+		case 2:
+			return nil
+		}
+
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (w *Wordle) statsMode() (err error) {
+	var (
+		played int
+		won    int
+		lost   int
+
+		attempts = make([]int, 6)
+	)
+
+	played = len(w.Games)
+
+	for _, g := range w.Games {
+		if g.Complete {
+			won += 1
+			attempts[len(g.Rows)-1] += 1
+		} else if len(g.Rows) == 6 {
+			lost += 1
+		}
+	}
+
+	fmt.Print("\033[H\033[2J")
+	fmt.Println(header)
+
+	color.HiRed("🚨🚨 Statz 🚨🚨")
+	fmt.Printf("You've played %d matches, winning %d of them (with a win rate of %.2f %%)\n",
+		played, won, float64(won/played*100))
+	fmt.Printf("You abandoned %d games\n\n", played-won-lost)
+
+	color.Cyan(fmt.Sprintf("Guess Distribution\n"))
+	bars := make(pterm.Bars, 6)
+	for i, count := range attempts {
+		bars[i] = pterm.Bar{
+			Label: fmt.Sprintf("%d", i+1),
+			Value: count,
+		}
+	}
+
+	pterm.DefaultBarChart.WithHorizontal().WithBars(bars).Render()
+
+	fmt.Println("press enter to quit")
+	fmt.Scanln()
+
+	return
+}
+
+func (w *Wordle) gameMode() (err error) {
 	t := bod()
 	var g *Game
 	if len(w.Games) > 0 && w.Games[len(w.Games)-1].Date == t {
@@ -295,12 +242,6 @@ func bod() time.Time {
 	year, month, day := t.Date()
 
 	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
-}
-
-func loadWord(seed int64) string {
-	rand.Seed(seed)
-
-	return words[rand.Intn(len(words))]
 }
 
 // hattip: https://stackoverflow.com/a/28890625
