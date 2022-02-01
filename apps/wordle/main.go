@@ -243,6 +243,10 @@ func (w *Wordle) Run() (err error) {
 				return errors.New("Guesses must be 5 letters long")
 			}
 
+			if !isValidWord(input) {
+				return errors.New("Not a valid word")
+			}
+
 			return nil
 		}
 

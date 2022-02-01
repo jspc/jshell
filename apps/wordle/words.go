@@ -2317,3 +2317,13 @@ var words = []string{
 	"zesty",
 	"zonal",
 }
+
+func isValidWord(s string) bool {
+	for _, w := range words {
+		if w == s {
+			return true
+		}
+	}
+
+	return false
+}
