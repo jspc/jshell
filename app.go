@@ -5,12 +5,16 @@ import (
 
 	"localhost/jshell/apps/hello-world"
 	"localhost/jshell/apps/quit"
+	"localhost/jshell/apps/wordle"
 )
 
 var (
 	Apps = []App{
-		helloworld.HelloWorld{},
-		quit.Quit{},
+		new(helloworld.HelloWorld),
+		new(wordle.Wordle),
+
+		// Place at end, seems less jumbled
+		new(quit.Quit),
 	}
 
 	appMenuTemplate = &promptui.SelectTemplates{
@@ -19,7 +23,7 @@ var (
 		Inactive: "   {{ .Name | cyan }}",
 		Selected: "\U0001F336  {{ .Name | red | cyan }}",
 		Details: `
---------- Application ----------
+
 {{ "Name:" | faint }}	{{ .Name }}
 {{ "Description:" | faint }}	{{ .Desc }}`,
 	}
