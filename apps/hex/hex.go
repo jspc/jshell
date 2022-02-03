@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jspc/jshell/apps"
 	"github.com/manifoldco/promptui"
 )
 
@@ -39,52 +40,25 @@ type Hex struct {
 }
 
 func (Hex) Name() string        { return "Hex" }
-func (Hex) Description() string { return "Find the words hidden in some words 🪄" }
+func (Hex) Description() string { return "Find the hidden words in some characters 🪄" }
 func (Hex) Cleanup() error      { return nil }
 
 func (h *Hex) Run() (err error) {
-	err = h.loadGames()
+	g, err := h.todaysGame()
 	if err != nil {
 		return
 	}
 
-	t := bod()
-	var g *Game
-	if len(h.Games) > 0 && h.Games[len(h.Games)-1].Date == t {
-		g = h.Games[len(h.Games)-1]
-	} else {
-		g = NewGame()
-		h.Games = append(h.Games, g)
-	}
-
 	g.setWordlist()
+
+	prompt := promptui.Prompt{
+		Label:    "Guess",
+		Validate: g.validateGuesses,
+	}
 
 	for {
 		fmt.Print("\033[H\033[2J")
 		fmt.Println(g)
-
-		validate := func(input string) error {
-			input = strings.ToUpper(input)
-
-			if len(input) < 4 {
-				return errors.New("Guesses must be at least 4 letters long")
-			}
-
-			if !contains([]rune(input), g.Chars[0]) {
-				return errors.New("Word must contain the letter " + string(g.Chars[0]))
-			}
-
-			if !g.isValid(input) {
-				return errors.New("Unknown word 🤷")
-			}
-
-			return nil
-		}
-
-		prompt := promptui.Prompt{
-			Label:    "Guess",
-			Validate: validate,
-		}
 
 		result, err := prompt.Run()
 		if err != nil {
@@ -99,9 +73,28 @@ func (h *Hex) Run() (err error) {
 
 		err = h.saveGames()
 		if err != nil {
-			panic(err)
+			break
 		}
 	}
+
+	return
+}
+
+func (h *Hex) todaysGame() (g *Game, err error) {
+	err = h.loadGames()
+	if err != nil {
+		return
+	}
+
+	t := apps.Bod()
+	if len(h.Games) > 0 && h.Games[len(h.Games)-1].Date == t {
+		return h.Games[len(h.Games)-1], nil
+	}
+
+	g = NewGame()
+	h.Games = append(h.Games, g)
+
+	return
 }
 
 func (h *Hex) loadGames() (err error) {
@@ -132,4 +125,32 @@ func (h *Hex) saveGames() (err error) {
 	e := gob.NewEncoder(f)
 
 	return e.Encode(h.Games)
+}
+
+func (g *Game) validateGuesses(input string) error {
+	input = strings.ToUpper(input)
+
+	for _, c := range input {
+		if !contains(g.Chars, c) {
+			return fmt.Errorf("Letter '%c' is not in the letter set", c)
+		}
+	}
+
+	if len(input) < 4 {
+		return errors.New("Guesses must be at least 4 letters long")
+	}
+
+	if !contains([]rune(input), g.Chars[0]) {
+		return errors.New("Word must contain the letter " + string(g.Chars[0]))
+	}
+
+	if g.guessed(input) {
+		return errors.New("Word has already been guessed")
+	}
+
+	if !g.isValid(input) {
+		return errors.New("Unknown word 🤷")
+	}
+
+	return nil
 }

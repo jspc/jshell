@@ -7,18 +7,22 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/jspc/jshell/apps"
 )
 
 type Game struct {
-	Date  time.Time
-	Chars []rune
-	Words []string
+	Date         time.Time
+	Chars        []rune
+	Words        []string
+	Score        int
+	TargetScore  int
+	PangramCount int
 
 	wordlist map[string]int
 }
 
 func NewGame() (g *Game) {
-	t := bod()
+	t := apps.Bod()
 
 	g = &Game{
 		Date:  t,
@@ -26,13 +30,13 @@ func NewGame() (g *Game) {
 		Words: make([]string, 0),
 	}
 
-	g.setWordlist()
-
 	return
 }
 
 func (g *Game) setWordlist() {
 	indices := mappings[g.Chars[0]]
+	targetScore := 0
+	g.PangramCount = 0
 
 	g.wordlist = make(map[string]int)
 	for _, i := range indices {
@@ -49,8 +53,15 @@ func (g *Game) setWordlist() {
 
 		if valid {
 			g.wordlist[w] = 1
+			targetScore += g.score(w)
+
+			if g.isPangram(w) {
+				g.PangramCount += 1
+			}
 		}
 	}
+
+	g.TargetScore = targetScore
 }
 
 func (g Game) isValid(in string) bool {
@@ -66,11 +77,36 @@ func (g *Game) isPangram(s string) bool {
 }
 
 func (g Game) String() string {
+	pangramCount := 0
+	words := make([]string, len(g.Words))
+
+	for idx, w := range g.Words {
+		words[idx] = fmt.Sprintf("%d\t%s", idx+1, w)
+
+		if g.isPangram(w) {
+			pangramCount += 1
+			words[idx] += "\t😎 pangram 😎"
+		}
+	}
+
+	if len(words) > 10 {
+		words = words[len(words)-10:]
+	}
+
 	sb := strings.Builder{}
 
 	sb.WriteString(header)
-	sb.WriteString(color.MagentaString(formatDate(g.Date)))
-	sb.WriteString("\n\n\n")
+	sb.WriteString(color.MagentaString(apps.FormatDate(g.Date)))
+	sb.WriteString("\n")
+	sb.WriteString("score: ")
+	sb.WriteString(color.HiCyanString("%d ", g.Score))
+	sb.WriteString("out of a maximum of: ")
+	sb.WriteString(color.HiCyanString("%d\n", g.TargetScore))
+	sb.WriteString("There are a total of ")
+	sb.WriteString(color.HiCyanString("%d/%d", g.PangramCount-pangramCount, g.PangramCount))
+	sb.WriteString(" pangrams left to find!\n")
+
+	sb.WriteString("\n\n")
 
 	sb.WriteString("letters: ")
 	sb.WriteString(color.New(color.BgHiYellow, color.FgBlack).Sprint(string(g.Chars[0])))
@@ -83,8 +119,9 @@ func (g Game) String() string {
 
 	sb.WriteString("\nGuesses:\n\n")
 
-	for idx, word := range g.Words {
-		sb.WriteString(fmt.Sprintf("%d\t%s\n", idx+1, word))
+	for _, word := range words {
+		sb.WriteString(word)
+		sb.WriteString("\n")
 	}
 
 	return sb.String()
@@ -92,21 +129,32 @@ func (g Game) String() string {
 }
 
 func (g *Game) Guess(s string) {
-	sb := strings.Builder{}
-	sb.WriteString(s)
-
-	if g.isPangram(s) {
-		sb.WriteString("\t😎 pangram 😎")
-	}
-
-	g.Words = append(g.Words, sb.String())
+	g.Words = append(g.Words, s)
+	g.Score += g.score(s)
 }
 
-func bod() time.Time {
-	t := time.Now()
-	year, month, day := t.Date()
+func (g Game) guessed(s string) bool {
+	for _, guess := range g.Words {
+		if guess == s {
+			return true
+		}
+	}
 
-	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
+	return false
+}
+
+func (g Game) score(s string) int {
+	score := 1
+	if len(s) > 4 {
+		score = len(s)
+	}
+
+	if g.isPangram(s) {
+		score += 7
+
+	}
+
+	return score
 }
 
 func selectChars(t time.Time) []rune {
@@ -122,20 +170,6 @@ func selectChars(t time.Time) []rune {
 	})
 
 	return p
-}
-
-// hattip: https://stackoverflow.com/a/28890625
-func formatDate(t time.Time) string {
-	suffix := "th"
-	switch t.Day() {
-	case 1, 21, 31:
-		suffix = "st"
-	case 2, 22:
-		suffix = "nd"
-	case 3, 23:
-		suffix = "rd"
-	}
-	return t.Format("Monday 2" + suffix + " January, 2006")
 }
 
 func distinctLetters(s string) []rune {
