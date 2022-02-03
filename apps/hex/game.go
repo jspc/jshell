@@ -98,17 +98,17 @@ func (g Game) String() string {
 	sb.WriteString(header)
 	sb.WriteString(color.MagentaString(apps.FormatDate(g.Date)))
 	sb.WriteString("\n")
-	sb.WriteString("score: ")
+	sb.WriteString("Score: ")
 	sb.WriteString(color.HiCyanString("%d ", g.Score))
 	sb.WriteString("out of a maximum of: ")
 	sb.WriteString(color.HiCyanString("%d\n", g.TargetScore))
-	sb.WriteString("There are a total of ")
-	sb.WriteString(color.HiCyanString("%d/%d", g.PangramCount-pangramCount, g.PangramCount))
-	sb.WriteString(" pangrams left to find!\n")
+	sb.WriteString("You have found ")
+	sb.WriteString(color.HiCyanString("%d/%d", pangramCount, g.PangramCount))
+	sb.WriteString(" pangram(s)!")
 
 	sb.WriteString("\n\n")
 
-	sb.WriteString("letters: ")
+	sb.WriteString("Letters: \n\t")
 	sb.WriteString(color.New(color.BgHiYellow, color.FgBlack).Sprint(string(g.Chars[0])))
 	sb.WriteRune(' ')
 
@@ -117,7 +117,7 @@ func (g Game) String() string {
 		sb.WriteRune(' ')
 	}
 
-	sb.WriteString("\nGuesses:\n\n")
+	sb.WriteString("\n\n\nGuesses:\n\n")
 
 	for _, word := range words {
 		sb.WriteString(word)

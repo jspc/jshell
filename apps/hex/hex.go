@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/jspc/jshell/apps"
 	"github.com/manifoldco/promptui"
 )
@@ -52,7 +53,7 @@ func (h *Hex) Run() (err error) {
 	g.setWordlist()
 
 	prompt := promptui.Prompt{
-		Label:    "Guess",
+		Label:    "Guess (or ? for help)",
 		Validate: g.validateGuesses,
 	}
 
@@ -69,14 +70,26 @@ func (h *Hex) Run() (err error) {
 			continue
 		}
 
-		g.Guess(strings.ToUpper(result))
+		switch result {
+		case "?":
+			h.help()
 
-		err = h.saveGames()
-		if err != nil {
-			break
+		case ":q", ":Q":
+			goto byebye
+
+		default:
+			g.Guess(strings.ToUpper(result))
+
+			err = h.saveGames()
+			if err != nil {
+				goto byebye
+			}
+
 		}
 	}
 
+	// super lazy label/ goto, rather than fixing my code
+byebye:
 	return
 }
 
@@ -127,8 +140,50 @@ func (h *Hex) saveGames() (err error) {
 	return e.Encode(h.Games)
 }
 
+func (g *Hex) help() {
+	fmt.Print("\033[H\033[2J")
+	fmt.Println(header)
+	fmt.Println()
+	color.Magenta("Help\n====")
+	fmt.Print(`Hex is a spelling game (gerrit? spell? hex? no?) where the aim is to find as many words
+as possible, made of just the 7 letters given.
+
+Further, each guess must contain the letter in the yellow square at least once.
+
+Guesses must contain at least 4 letters, and can be as long as you want.
+
+Each puzzle contains at least one 'pangram'- a word which contains every one of the given 7 letters
+at least once.
+
+
+`)
+
+	color.Green("Keys\n====")
+	fmt.Print(`Guesses can be made using the keyboard, pressing 'enter' to submit. Next to the guess prompt is either a red 'x' or a green tick.
+This denotes whether the current guess is a valid guess (so: correct length, correct letters, real word, and not having been guessed before).
+
+Guesses are case-insensitive.
+
+To Quit the game, and return to the main menu, type ':q' (without quotes) and hit ener.
+
+To see this help text again, type '?' (without quotes) and hit enter.
+
+
+`)
+
+	fmt.Println("Press enter to return to the game")
+
+	//#nosec
+	fmt.Scanln()
+}
+
 func (g *Game) validateGuesses(input string) error {
 	input = strings.ToUpper(input)
+
+	// control inputs
+	if input == "?" || input == ":Q" {
+		return nil
+	}
 
 	for _, c := range input {
 		if !contains(g.Chars, c) {
