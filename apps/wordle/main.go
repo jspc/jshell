@@ -149,7 +149,7 @@ func (w *Wordle) statsMode() (err error) {
 
 	color.HiRed("🚨🚨 Statz 🚨🚨")
 	fmt.Printf("You've played %d matches, winning %d of them (with a win rate of %.2f %%)\n",
-		played, won, float64(won/played*100))
+		played, won, float64(won)/float64(played)*100)
 	fmt.Printf("You abandoned %d games\n\n", played-won-lost)
 
 	color.Cyan("Guess Distribution\n")
