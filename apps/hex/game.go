@@ -17,6 +17,7 @@ type Game struct {
 	Score        int
 	TargetScore  int
 	PangramCount int
+	TargetWords  int
 
 	wordlist map[string]int
 }
@@ -62,6 +63,7 @@ func (g *Game) setWordlist() {
 	}
 
 	g.TargetScore = targetScore
+	g.TargetWords = len(g.wordlist)
 }
 
 func (g Game) isValid(in string) bool {
@@ -104,7 +106,10 @@ func (g Game) String() string {
 	sb.WriteString(color.HiCyanString("%d\n", g.TargetScore))
 	sb.WriteString("You have found ")
 	sb.WriteString(color.HiCyanString("%d/%d", pangramCount, g.PangramCount))
-	sb.WriteString(" pangram(s)!")
+	sb.WriteString(" pangram(s)!\n")
+	sb.WriteString("You have found ")
+	sb.WriteString(color.HiCyanString("%d/%d", len(g.Words), g.TargetWords))
+	sb.WriteString(" words(s)!")
 
 	sb.WriteString("\n\n")
 
