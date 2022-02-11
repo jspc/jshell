@@ -5,6 +5,7 @@ import (
 
 	"github.com/jspc/jshell/apps/hello-world"
 	"github.com/jspc/jshell/apps/hex"
+	"github.com/jspc/jshell/apps/news"
 	"github.com/jspc/jshell/apps/quit"
 	"github.com/jspc/jshell/apps/wordle"
 )
@@ -12,6 +13,7 @@ import (
 var (
 	Apps = []App{
 		new(helloworld.HelloWorld),
+		new(news.News),
 		new(wordle.Wordle),
 		new(hex.Hex),
 
@@ -71,7 +73,7 @@ func AppMenu() (a App, err error) {
 		Label:     "Application Menu",
 		Items:     menuData,
 		Templates: appMenuTemplate,
-		Size:      4,
+		Size:      5,
 	}
 
 	idx, _, err := prompt.Run()

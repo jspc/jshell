@@ -28,3 +28,10 @@ func FormatDate(t time.Time) string {
 	}
 	return t.Format("Monday 2" + suffix + " January, 2006")
 }
+
+// FormatDateAndTime returns a nicely formatted date and time, which
+// it does by appending the time as HH:MM (24hr form) to the output
+// of FormatDate
+func FormatDateAndTime(t time.Time) string {
+	return FormatDate(t) + ", " + t.Format("15:04")
+}
