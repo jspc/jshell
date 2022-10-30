@@ -50,7 +50,7 @@ func (h *Hex) Run() (err error) {
 		return
 	}
 
-	g.setWordlist()
+	g.SetWordlist()
 
 	prompt := promptui.Prompt{
 		Label:    "Guess (or ? for help)",

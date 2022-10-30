@@ -34,7 +34,7 @@ func NewGame() (g *Game) {
 	return
 }
 
-func (g *Game) setWordlist() {
+func (g *Game) SetWordlist() {
 	indices := mappings[g.Chars[0]]
 	targetScore := 0
 	g.PangramCount = 0
